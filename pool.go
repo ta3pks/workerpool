@@ -39,11 +39,17 @@ func _worker_func(c chan func(), ctx context.Context) { //{{{
 	}
 } //}}}
 func Exec(p *WorkerPool, f func()) error {
+	wg, ok := p.ctx.Value("wg").(*sync.WaitGroup)
+	if ok {
+		wg_add(p)
+	}
 	select {
 	case <-p.ctx.Done():
+		if ok {
+			wg.Done()
+		}
 		return errors.New("pool context is cancelled")
 	case p.scheduler <- f:
-		wg_add(p)
 		return nil
 	}
 }
